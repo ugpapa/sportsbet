@@ -2,6 +2,20 @@
 import React, { useState } from 'react';
 import { Search, MessageSquare, X, ChevronDown, ChevronUp } from 'lucide-react';
 
+interface Inquiry {
+  id: number;
+  userId: string;
+  nickname: string;
+  title: string;
+  content: string;
+  category: string;
+  status: string;
+  createdAt: string;
+  response: string | null;
+  respondedAt: string | null;
+  respondedBy: string | null;
+}
+
 // 샘플 문의 데이터
 const initialInquiries = [
   {
@@ -46,12 +60,12 @@ const initialInquiries = [
 ];
 
 export default function InquiryPage() {
-  const [inquiries, setInquiries] = useState(initialInquiries);
+  const [inquiries, setInquiries] = useState<Inquiry[]>(initialInquiries);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('전체');
   const [categoryFilter, setCategoryFilter] = useState('전체');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedInquiry, setSelectedInquiry] = useState<any>(null);
+  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [response, setResponse] = useState('');
   const [expandedInquiries, setExpandedInquiries] = useState<number[]>([]);
 
@@ -85,7 +99,7 @@ export default function InquiryPage() {
     });
 
     setInquiries(inquiries.map(inquiry => 
-      inquiry.id === selectedInquiry.id
+      inquiry.id === selectedInquiry?.id
         ? {
             ...inquiry,
             status: '답변완료',

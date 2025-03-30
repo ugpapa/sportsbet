@@ -1,17 +1,27 @@
 "use client";
 import React, { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Edit, Trash2, Plus, ChevronDown, ChevronUp, X } from 'lucide-react';
+
+interface Notice {
+  id: number;
+  title: string;
+  content: string;
+  isImportant: boolean;
+  createdAt: string;
+  createdBy: string;
+  views: number;
+}
 
 // 샘플 공지사항 데이터
-const initialNotices = [
+const initialNotices: Notice[] = [
   {
     id: 1,
     title: '시스템 점검 안내',
-    content: '2024년 3월 25일 02:00 ~ 06:00 시스템 점검이 진행됩니다.',
+    content: '2024년 3월 15일 새벽 2시부터 4시까지 시스템 점검이 있을 예정입니다.\n\n점검 시간 동안 서비스 이용이 제한될 수 있습니다.\n\n불편을 드려 죄송합니다.',
     isImportant: true,
-    createdAt: '2024-03-22 14:30',
-    createdBy: '관리자1',
-    views: 245
+    createdAt: '2024-03-10 10:00',
+    createdBy: '관리자',
+    views: 150
   },
   {
     id: 2,
@@ -34,32 +44,24 @@ const initialNotices = [
 ];
 
 export default function NoticePage() {
-  const [notices, setNotices] = useState(initialNotices);
+  const [notices, setNotices] = useState<Notice[]>(initialNotices);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingNotice, setEditingNotice] = useState<any>(null);
+  const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
   const [expandedNotices, setExpandedNotices] = useState<number[]>([]);
-  const [newNotice, setNewNotice] = useState({
+  const [newNotice, setNewNotice] = useState<Notice>({
+    id: notices.length + 1,
     title: '',
     content: '',
-    isImportant: false
+    isImportant: false,
+    createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    createdBy: '관리자',
+    views: 0
   });
 
   // 내용 길이 체크 (3줄 이상인지)
   const isContentLong = (content: string) => {
     return content.split('\n').length > 3 || content.length > 200;
-  };
-
-  // 내용 줄임 처리
-  const truncateContent = (content: string) => {
-    const lines = content.split('\n');
-    if (lines.length > 3) {
-      return lines.slice(0, 3).join('\n') + '...';
-    }
-    if (content.length > 200) {
-      return content.slice(0, 200) + '...';
-    }
-    return content;
   };
 
   // 더보기/접기 토글
@@ -86,8 +88,7 @@ export default function NoticePage() {
       hour12: false
     });
 
-    const notice = {
-      id: notices.length + 1,
+    const notice: Notice = {
       ...newNotice,
       createdAt: now,
       createdBy: '관리자1', // 실제로는 로그인된 관리자 정보
@@ -97,17 +98,18 @@ export default function NoticePage() {
     setNotices([notice, ...notices]);
     setIsModalOpen(false);
     setNewNotice({
+      id: notices.length + 2,
       title: '',
       content: '',
-      isImportant: false
+      isImportant: false,
+      createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      createdBy: '관리자',
+      views: 0
     });
   };
 
   const handleEditNotice = () => {
-    if (!editingNotice.title || !editingNotice.content) {
-      alert('제목과 내용을 모두 입력해주세요.');
-      return;
-    }
+    if (!editingNotice) return;
 
     setNotices(notices.map(notice => 
       notice.id === editingNotice.id ? editingNotice : notice
@@ -215,7 +217,7 @@ export default function NoticePage() {
                   className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                   title="수정"
                 >
-                  <Edit2 size={16} />
+                  <Edit size={16} />
                 </button>
                 <button
                   onClick={() => handleDeleteNotice(notice.id)}
@@ -242,7 +244,15 @@ export default function NoticePage() {
                 onClick={() => {
                   setIsModalOpen(false);
                   setEditingNotice(null);
-                  setNewNotice({ title: '', content: '', isImportant: false });
+                  setNewNotice({
+                    id: notices.length + 1,
+                    title: '',
+                    content: '',
+                    isImportant: false,
+                    createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+                    createdBy: '관리자',
+                    views: 0
+                  });
                 }}
                 title="닫기"
                 aria-label="모달 닫기"
@@ -290,6 +300,7 @@ export default function NoticePage() {
               <div className="flex items-center">
                 <input
                   type="checkbox"
+                  id="isImportant"
                   checked={editingNotice ? editingNotice.isImportant : newNotice.isImportant}
                   onChange={(e) => {
                     if (editingNotice) {
@@ -300,7 +311,7 @@ export default function NoticePage() {
                   }}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label className="ml-2 block text-sm text-gray-700">
+                <label htmlFor="isImportant" className="ml-2 block text-sm text-gray-700">
                   중요 공지로 설정
                 </label>
               </div>

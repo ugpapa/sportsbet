@@ -1,6 +1,18 @@
 "use client";
 import React, { useState } from 'react';
-import { Search, Settings, X } from 'lucide-react';
+import { X } from 'lucide-react';
+
+interface DepositRequest {
+  id: number;
+  username: string;
+  nickname: string;
+  amount: number;
+  date: string;
+  status: string;
+  processedBy?: string;
+  processedIp?: string;
+  processedAt?: string;
+}
 
 // 관리자 주계좌 정보 (실제로는 API나 전역 상태에서 가져와야 함)
 const mainAccount = {
@@ -10,7 +22,7 @@ const mainAccount = {
 };
 
 // 샘플 데이터
-const depositRequests = [
+const depositRequests: DepositRequest[] = [
   {
     id: 1,
     username: 'user123',
@@ -46,14 +58,16 @@ const depositRequests = [
 export default function DepositPage() {
   const [requests, setRequests] = useState(depositRequests);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [selectedRequest, setSelectedRequest] = useState<DepositRequest | null>(null);
 
-  const handleChargeClick = (request) => {
+  const handleChargeClick = (request: DepositRequest) => {
     setSelectedRequest(request);
     setIsModalOpen(true);
   };
 
   const handleConfirmCharge = () => {
+    if (!selectedRequest) return;
+
     // 실제로는 API 호출로 충전 처리
     const now = new Date().toLocaleString('ko-KR', {
       year: 'numeric',

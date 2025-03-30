@@ -1,6 +1,21 @@
 "use client";
 import React, { useState } from 'react';
-import { Search, Settings, X } from 'lucide-react';
+import { X } from 'lucide-react';
+
+interface WithdrawRequest {
+  id: number;
+  username: string;
+  nickname: string;
+  amount: number;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  date: string;
+  status: string;
+  processedBy?: string;
+  processedIp?: string;
+  processedAt?: string;
+}
 
 // 샘플 데이터
 const withdrawRequests = [
@@ -43,22 +58,18 @@ const withdrawRequests = [
 ];
 
 export default function WithdrawPage() {
-  const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [requests, setRequests] = useState(withdrawRequests);
+  const [selectedWithdraw, setSelectedWithdraw] = useState<WithdrawRequest | null>(null);
+  const [requests, setRequests] = useState<WithdrawRequest[]>(withdrawRequests);
 
-  const handleProcess = (request) => {
-    setSelectedRequest(request);
+  const handleProcess = (withdraw: WithdrawRequest) => {
+    setSelectedWithdraw(withdraw);
     setIsModalOpen(true);
   };
 
-  const handleConfirm = () => {
-    setIsConfirmOpen(true);
-  };
+  const handleConfirmProcess = () => {
+    if (!selectedWithdraw) return;
 
-  const handleComplete = () => {
     // 실제로는 API 호출로 출금 처리
     const now = new Date().toLocaleString('ko-KR', {
       year: 'numeric',
@@ -83,21 +94,20 @@ export default function WithdrawPage() {
 
     setRequests(prevRequests =>
       prevRequests.map(req =>
-        req.id === selectedRequest.id
+        req.id === selectedWithdraw.id
           ? {
               ...req,
               status: '완료',
               processedBy: '관리자1', // 실제로는 로그인된 관리자 정보
-              processedIp: randomIp, // 랜덤한 더미 IP 할당
+              processedIp: randomIp,
               processedAt: now
             }
           : req
       )
     );
 
-    setIsConfirmOpen(false);
     setIsModalOpen(false);
-    setSelectedRequest(null);
+    setSelectedWithdraw(null);
   };
 
   return (
@@ -174,7 +184,7 @@ export default function WithdrawPage() {
       </div>
 
       {/* 출금 처리 모달 */}
-      {isModalOpen && selectedRequest && (
+      {isModalOpen && selectedWithdraw && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
@@ -194,11 +204,11 @@ export default function WithdrawPage() {
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-gray-500">아이디:</span>
-                    <span className="ml-2">{selectedRequest.username}</span>
+                    <span className="ml-2">{selectedWithdraw.username}</span>
                   </div>
                   <div>
                     <span className="text-gray-500">닉네임:</span>
-                    <span className="ml-2">{selectedRequest.nickname}</span>
+                    <span className="ml-2">{selectedWithdraw.nickname}</span>
                   </div>
                 </div>
               </div>
@@ -208,15 +218,15 @@ export default function WithdrawPage() {
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-gray-500">은행:</span>
-                    <span className="ml-2">{selectedRequest.bankName}</span>
+                    <span className="ml-2">{selectedWithdraw.bankName}</span>
                   </div>
                   <div>
                     <span className="text-gray-500">계좌번호:</span>
-                    <span className="ml-2">{selectedRequest.accountNumber}</span>
+                    <span className="ml-2">{selectedWithdraw.accountNumber}</span>
                   </div>
                   <div>
                     <span className="text-gray-500">예금주:</span>
-                    <span className="ml-2">{selectedRequest.accountHolder}</span>
+                    <span className="ml-2">{selectedWithdraw.accountHolder}</span>
                   </div>
                 </div>
               </div>
@@ -226,60 +236,23 @@ export default function WithdrawPage() {
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-gray-500">출금 금액:</span>
-                    <span className="ml-2 font-medium">{selectedRequest.amount.toLocaleString()}원</span>
+                    <span className="ml-2 font-medium">{selectedWithdraw.amount.toLocaleString()}원</span>
                   </div>
                   <div>
                     <span className="text-gray-500">요청 시간:</span>
-                    <span className="ml-2">{selectedRequest.date}</span>
+                    <span className="ml-2">{selectedWithdraw.date}</span>
                   </div>
                 </div>
               </div>
 
               <div className="pt-4">
                 <button
-                  onClick={handleConfirm}
+                  onClick={handleConfirmProcess}
                   className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                 >
                   처리하기
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 확인 모달 */}
-      {isConfirmOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
-            <div className="text-center mb-4">
-              <h3 className="text-lg font-semibold">출금 처리 확인</h3>
-              <p className="text-gray-600 mt-2">
-                아래 출금 요청을 처리하시겠습니까?
-              </p>
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <p className="font-medium">{selectedRequest.amount.toLocaleString()}원</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {selectedRequest.bankName} {selectedRequest.accountNumber}
-                </p>
-                <p className="text-sm text-gray-500">
-                  예금주: {selectedRequest.accountHolder}
-                </p>
-              </div>
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setIsConfirmOpen(false)}
-                className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleComplete}
-                className="flex-1 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-              >
-                확인
-              </button>
             </div>
           </div>
         </div>

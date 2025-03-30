@@ -9,36 +9,14 @@ import {
   Key,
   History,
   UserPlus,
-  FileText,
-  LogOut,
-  Settings,
-  Dice,
-  Coins
+  LogOut
 } from 'lucide-react';
 import AccessControl from './components/AccessControl';
-import { IpMapping } from './types';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
+import { AccessControlRule, NotificationSettings } from './types';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import AddAdminModal from './components/AddAdminModal';
 
-interface AccessControlRule {
-  id: string;
-  adminId: string;
-  publicIp: string;
-  privateIps: string[];
-  allowedTime: {
-    start: string;
-    end: string;
-  };
-  allowedDays: string[];
-  createdAt: string;
-  isActive: boolean;
-}
 
 interface Settings {
   adminAccounts: {
@@ -57,6 +35,7 @@ interface Settings {
     ipWhitelist: string[];
     allowedTimeRanges: string[];
     twoFactorAuth: boolean;
+    rules: AccessControlRule[];
   };
   permissions: {
     roles: Array<{
@@ -76,16 +55,7 @@ interface Settings {
     loginAttempts: number;
     lockoutDuration: number;
   };
-  notifications: {
-    adminLogin: boolean;
-    userRegistration: boolean;
-    depositRequest: boolean;
-    withdrawalRequest: boolean;
-    suspiciousActivity: boolean;
-    emailNotifications: boolean;
-    smsNotifications: boolean;
-    telegramNotifications: boolean;
-  };
+  notifications: NotificationSettings;
   auditLog: {
     retentionDays: number;
     logLevel: string;
@@ -117,7 +87,8 @@ const initialSettings: Settings = {
   accessControl: {
     ipWhitelist: ['127.0.0.1'],
     allowedTimeRanges: ['09:00-18:00'],
-    twoFactorAuth: true
+    twoFactorAuth: true,
+    rules: []
   },
   permissions: {
     roles: [
@@ -170,11 +141,17 @@ const initialSettings: Settings = {
   ipMappings: []
 };
 
+// Notification labels for the notifications section
+const notificationLabels: Record<string, string> = {
+  adminLogin: '관리자 로그인',
+  userRegistration: '회원가입',
+  depositRequest: '입금 요청',
+  withdrawalRequest: '출금 요청',
+  suspiciousActivity: '의심스러운 활동'
+};
+
 // 공통 스타일 클래스를 변수로 정의
-const tableHeaderClass = "px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider";
 const tableCellClass = "px-4 py-2 whitespace-nowrap text-sm text-gray-900";
-const inputClass = "w-24 border rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500";
-const checkboxClass = "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(initialSettings);
@@ -242,7 +219,11 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSettingChange = (category: keyof Settings, field: string, value: any) => {
+  const handleSettingChange = (
+    category: keyof Settings,
+    field: string,
+    value: string | number | boolean | object | string[]
+  ) => {
     setSettings((prev) => ({
       ...prev,
       [category]: {
@@ -256,28 +237,35 @@ export default function SettingsPage() {
     const newRule: AccessControlRule = {
       ...rule,
       id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
     };
-
-    setSettings((prev) => ({
+    
+    setSettings(prev => ({
       ...prev,
-      ipMappings: [...prev.ipMappings, newRule],
+      accessControl: {
+        ...prev.accessControl,
+        rules: [...prev.accessControl.rules, newRule]
+      }
     }));
   };
 
   const handleDeleteAccessControlRule = (id: string) => {
-    setSettings((prev) => ({
+    setSettings(prev => ({
       ...prev,
-      ipMappings: prev.ipMappings.filter((rule) => rule.id !== id),
+      accessControl: {
+        ...prev.accessControl,
+        rules: prev.accessControl.rules.filter(rule => rule.id !== id)
+      }
     }));
   };
 
   const handleUpdateAccessControlRule = (id: string, updates: Partial<AccessControlRule>) => {
-    setSettings((prev) => ({
+    setSettings(prev => ({
       ...prev,
-      ipMappings: prev.ipMappings.map((rule) =>
-        rule.id === id ? { ...rule, ...updates } : rule
-      ),
+      accessControl: {
+        ...prev.accessControl,
+        rules: prev.accessControl.rules.map(rule => rule.id === id ? { ...rule, ...updates } : rule)
+      }
     }));
   };
 
@@ -385,7 +373,7 @@ export default function SettingsPage() {
   // 접근 제어 설정
   const renderAccessControl = () => (
     <AccessControl
-      rules={settings.ipMappings}
+      rules={settings.accessControl.rules}
       onAdd={handleAddAccessControlRule}
       onDelete={handleDeleteAccessControlRule}
       onUpdate={handleUpdateAccessControlRule}
@@ -394,86 +382,53 @@ export default function SettingsPage() {
 
   // 권한 설정
   const renderPermissions = () => (
-    <div className="space-y-4">
-      <h2 className="text-lg font-medium text-gray-900">권한 설정</h2>
-      
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-xl font-semibold mb-4">권한 설정</h2>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className={tableHeaderClass}>역할</th>
-              <th className={tableHeaderClass}>읽기</th>
-              <th className={tableHeaderClass}>쓰기</th>
-              <th className={tableHeaderClass}>삭제</th>
-              <th className={tableHeaderClass}>모든 권한</th>
+        <table className="min-w-full">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left py-2">역할</th>
+              <th className="text-left py-2">읽기</th>
+              <th className="text-left py-2">쓰기</th>
+              <th className="text-left py-2">삭제</th>
+              <th className="text-left py-2">모든 권한</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody>
             {settings.permissions.roles.map((role, index) => (
-              <tr key={role.name}>
+              <tr key={index} className="border-b">
                 <td className={tableCellClass}>{role.name}</td>
                 <td className={tableCellClass}>
                   <input
                     type="checkbox"
                     checked={role.permissions.includes('read')}
-                    onChange={(e) => {
-                      const newRoles = [...settings.permissions.roles];
-                      if (e.target.checked) {
-                        newRoles[index].permissions = [...new Set([...newRoles[index].permissions, 'read'])];
-                      } else {
-                        newRoles[index].permissions = newRoles[index].permissions.filter(p => p !== 'read');
-                      }
-                      handleSettingChange('permissions', 'roles', newRoles);
-                    }}
-                    className={checkboxClass}
+                    onChange={() => handleSettingChange('permissions', 'roles', settings.permissions.roles.map((r, i) => i === index ? { ...r, permissions: [...r.permissions, 'read'] } : r))}
+                    aria-label={`${role.name} 읽기 권한`}
                   />
                 </td>
                 <td className={tableCellClass}>
                   <input
                     type="checkbox"
                     checked={role.permissions.includes('write')}
-                    onChange={(e) => {
-                      const newRoles = [...settings.permissions.roles];
-                      if (e.target.checked) {
-                        newRoles[index].permissions = [...new Set([...newRoles[index].permissions, 'write'])];
-                      } else {
-                        newRoles[index].permissions = newRoles[index].permissions.filter(p => p !== 'write');
-                      }
-                      handleSettingChange('permissions', 'roles', newRoles);
-                    }}
-                    className={checkboxClass}
+                    onChange={() => handleSettingChange('permissions', 'roles', settings.permissions.roles.map((r, i) => i === index ? { ...r, permissions: [...r.permissions, 'write'] } : r))}
+                    aria-label={`${role.name} 쓰기 권한`}
                   />
                 </td>
                 <td className={tableCellClass}>
                   <input
                     type="checkbox"
                     checked={role.permissions.includes('delete')}
-                    onChange={(e) => {
-                      const newRoles = [...settings.permissions.roles];
-                      if (e.target.checked) {
-                        newRoles[index].permissions = [...new Set([...newRoles[index].permissions, 'delete'])];
-                      } else {
-                        newRoles[index].permissions = newRoles[index].permissions.filter(p => p !== 'delete');
-                      }
-                      handleSettingChange('permissions', 'roles', newRoles);
-                    }}
-                    className={checkboxClass}
+                    onChange={() => handleSettingChange('permissions', 'roles', settings.permissions.roles.map((r, i) => i === index ? { ...r, permissions: r.permissions.filter(p => p !== 'delete') } : r))}
+                    aria-label={`${role.name} 삭제 권한`}
                   />
                 </td>
                 <td className={tableCellClass}>
                   <input
                     type="checkbox"
                     checked={role.permissions.includes('all')}
-                    onChange={(e) => {
-                      const newRoles = [...settings.permissions.roles];
-                      if (e.target.checked) {
-                        newRoles[index].permissions = ['all'];
-                      } else {
-                        newRoles[index].permissions = newRoles[index].permissions.filter(p => p !== 'all');
-                      }
-                      handleSettingChange('permissions', 'roles', newRoles);
-                    }}
-                    className={checkboxClass}
+                    onChange={() => handleSettingChange('permissions', 'roles', settings.permissions.roles.map((r, i) => i === index ? { ...r, permissions: ['all'] } : r))}
+                    aria-label={`${role.name} 모든 권한`}
                   />
                 </td>
               </tr>
@@ -486,23 +441,19 @@ export default function SettingsPage() {
 
   // 보안 정책 설정
   const renderSecurityPolicy = () => (
-    <div className="space-y-4">
-      <h2 className="text-lg font-medium text-gray-900">보안 정책 설정</h2>
-      
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-xl font-semibold mb-4">보안 정책</h2>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className={tableHeaderClass}>설정 항목</th>
-              <th className={tableHeaderClass}>최소 길이</th>
-              <th className={tableHeaderClass}>만료 기간</th>
-              <th className={tableHeaderClass}>시도 제한</th>
-              <th className={tableHeaderClass}>잠금 시간</th>
+        <table className="min-w-full">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left py-2">설정 항목</th>
+              <th className="text-left py-2">값</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            <tr>
-              <td className={tableCellClass}>설정 값</td>
+          <tbody>
+            <tr className="border-b">
+              <td className={tableCellClass}>최소 비밀번호 길이</td>
               <td className={tableCellClass}>
                 <div className="flex items-center">
                   <input
@@ -512,12 +463,16 @@ export default function SettingsPage() {
                       ...settings.securityPolicy.passwordPolicy,
                       minLength: parseInt(e.target.value)
                     })}
-                    className={inputClass}
+                    aria-label="최소 비밀번호 길이"
                     min="8"
+                    max="32"
                   />
-                  <span className="ml-2 text-sm text-gray-500">자</span>
+                  <span className="ml-2">자</span>
                 </div>
               </td>
+            </tr>
+            <tr className="border-b">
+              <td className={tableCellClass}>비밀번호 만료일</td>
               <td className={tableCellClass}>
                 <div className="flex items-center">
                   <input
@@ -527,89 +482,43 @@ export default function SettingsPage() {
                       ...settings.securityPolicy.passwordPolicy,
                       expiryDays: parseInt(e.target.value)
                     })}
-                    className={inputClass}
+                    aria-label="비밀번호 만료일"
                     min="0"
+                    max="365"
                   />
-                  <span className="ml-2 text-sm text-gray-500">일</span>
+                  <span className="ml-2">일</span>
                 </div>
               </td>
+            </tr>
+            <tr className="border-b">
+              <td className={tableCellClass}>로그인 시도 제한</td>
               <td className={tableCellClass}>
                 <div className="flex items-center">
                   <input
                     type="number"
                     value={settings.securityPolicy.loginAttempts}
                     onChange={(e) => handleSettingChange('securityPolicy', 'loginAttempts', parseInt(e.target.value))}
-                    className={inputClass}
+                    aria-label="로그인 시도 제한"
                     min="1"
+                    max="10"
                   />
-                  <span className="ml-2 text-sm text-gray-500">회</span>
+                  <span className="ml-2">회</span>
                 </div>
               </td>
+            </tr>
+            <tr className="border-b">
+              <td className={tableCellClass}>계정 잠금 시간</td>
               <td className={tableCellClass}>
                 <div className="flex items-center">
                   <input
                     type="number"
                     value={settings.securityPolicy.lockoutDuration}
                     onChange={(e) => handleSettingChange('securityPolicy', 'lockoutDuration', parseInt(e.target.value))}
-                    className={inputClass}
+                    aria-label="계정 잠금 시간"
                     min="1"
+                    max="1440"
                   />
-                  <span className="ml-2 text-sm text-gray-500">분</span>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td className={tableCellClass}>비밀번호 정책</td>
-              <td className={tableCellClass} colSpan={4}>
-                <div className="flex items-center space-x-6">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={settings.securityPolicy.passwordPolicy.requireUppercase}
-                      onChange={(e) => handleSettingChange('securityPolicy', 'passwordPolicy', {
-                        ...settings.securityPolicy.passwordPolicy,
-                        requireUppercase: e.target.checked
-                      })}
-                      className={checkboxClass}
-                    />
-                    <span className="text-sm">대문자</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={settings.securityPolicy.passwordPolicy.requireLowercase}
-                      onChange={(e) => handleSettingChange('securityPolicy', 'passwordPolicy', {
-                        ...settings.securityPolicy.passwordPolicy,
-                        requireLowercase: e.target.checked
-                      })}
-                      className={checkboxClass}
-                    />
-                    <span className="text-sm">소문자</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={settings.securityPolicy.passwordPolicy.requireNumbers}
-                      onChange={(e) => handleSettingChange('securityPolicy', 'passwordPolicy', {
-                        ...settings.securityPolicy.passwordPolicy,
-                        requireNumbers: e.target.checked
-                      })}
-                      className={checkboxClass}
-                    />
-                    <span className="text-sm">숫자</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={settings.securityPolicy.passwordPolicy.requireSpecialChars}
-                      onChange={(e) => handleSettingChange('securityPolicy', 'passwordPolicy', {
-                        ...settings.securityPolicy.passwordPolicy,
-                        requireSpecialChars: e.target.checked
-                      })}
-                      className={checkboxClass}
-                    />
-                    <span className="text-sm">특수문자</span>
-                  </label>
+                  <span className="ml-2">분</span>
                 </div>
               </td>
             </tr>
@@ -621,57 +530,44 @@ export default function SettingsPage() {
 
   // 알림 설정
   const renderNotifications = () => (
-    <div className="space-y-4">
-      <h2 className="text-lg font-medium text-gray-900">알림 설정</h2>
-      
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-xl font-semibold mb-4">알림 설정</h2>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className={tableHeaderClass}>알림 항목</th>
-              <th className={tableHeaderClass}>이메일</th>
-              <th className={tableHeaderClass}>SMS</th>
-              <th className={tableHeaderClass}>텔레그램</th>
+        <table className="min-w-full">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left py-2">알림 항목</th>
+              <th className="text-left py-2">이메일</th>
+              <th className="text-left py-2">SMS</th>
+              <th className="text-left py-2">텔레그램</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {[
-              { key: 'adminLogin', label: '관리자 로그인' },
-              { key: 'userRegistration', label: '회원가입' },
-              { key: 'depositRequest', label: '입금 요청' },
-              { key: 'withdrawalRequest', label: '출금 요청' },
-              { key: 'suspiciousActivity', label: '의심스러운 활동' }
-            ].map(({ key, label }) => (
-              <tr key={key}>
+          <tbody>
+            {Object.entries(notificationLabels).map(([key, label]) => (
+              <tr key={key} className="border-b">
                 <td className={tableCellClass}>{label}</td>
                 <td className={tableCellClass}>
                   <input
                     type="checkbox"
                     checked={settings.notifications[`${key}_email`] || false}
-                    onChange={(e) => {
-                      handleSettingChange('notifications', `${key}_email`, e.target.checked);
-                    }}
-                    className={checkboxClass}
+                    onChange={(e) => handleSettingChange('notifications', `${key}_email`, e.target.checked)}
+                    aria-label={`${label} 이메일 알림`}
                   />
                 </td>
                 <td className={tableCellClass}>
                   <input
                     type="checkbox"
                     checked={settings.notifications[`${key}_sms`] || false}
-                    onChange={(e) => {
-                      handleSettingChange('notifications', `${key}_sms`, e.target.checked);
-                    }}
-                    className={checkboxClass}
+                    onChange={(e) => handleSettingChange('notifications', `${key}_sms`, e.target.checked)}
+                    aria-label={`${label} SMS 알림`}
                   />
                 </td>
                 <td className={tableCellClass}>
                   <input
                     type="checkbox"
                     checked={settings.notifications[`${key}_telegram`] || false}
-                    onChange={(e) => {
-                      handleSettingChange('notifications', `${key}_telegram`, e.target.checked);
-                    }}
-                    className={checkboxClass}
+                    onChange={(e) => handleSettingChange('notifications', `${key}_telegram`, e.target.checked)}
+                    aria-label={`${label} 텔레그램 알림`}
                   />
                 </td>
               </tr>
@@ -684,153 +580,29 @@ export default function SettingsPage() {
 
   // 감사 로그 설정
   const renderAuditLog = () => (
-    <div className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">감사 로그 설정</h2>
-      
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-xl font-semibold mb-4">감사 로그 설정</h2>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className={tableHeaderClass}>설정 항목</th>
-              <th className={tableHeaderClass}>값</th>
+        <table className="min-w-full">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left py-2">설정 항목</th>
+              <th className="text-left py-2">값</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            <tr>
+          <tbody>
+            <tr className="border-b">
               <td className={tableCellClass}>로그 보관 기간</td>
               <td className={tableCellClass}>
                 <input
                   type="number"
                   value={settings.auditLog.retentionDays}
                   onChange={(e) => handleSettingChange('auditLog', 'retentionDays', parseInt(e.target.value))}
-                  className={inputClass}
+                  aria-label="로그 보관 기간"
                   min="1"
+                  max="365"
                 />
-                <span className="ml-2 text-sm text-gray-500">일</span>
-              </td>
-            </tr>
-            <tr>
-              <td className={tableCellClass}>로그 레벨</td>
-              <td className={tableCellClass}>
-                <div className="flex items-center space-x-6">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="logLevel"
-                      checked={settings.auditLog.logLevel === 'debug'}
-                      onChange={() => handleSettingChange('auditLog', 'logLevel', 'debug')}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="text-sm">디버그 (모든 로그)</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="logLevel"
-                      checked={settings.auditLog.logLevel === 'info'}
-                      onChange={() => handleSettingChange('auditLog', 'logLevel', 'info')}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="text-sm">정보 (정보/경고/에러)</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="logLevel"
-                      checked={settings.auditLog.logLevel === 'warn'}
-                      onChange={() => handleSettingChange('auditLog', 'logLevel', 'warn')}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="text-sm">경고 (경고/에러)</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="logLevel"
-                      checked={settings.auditLog.logLevel === 'error'}
-                      onChange={() => handleSettingChange('auditLog', 'logLevel', 'error')}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="text-sm">에러 (에러만)</span>
-                  </label>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td className={tableCellClass}>로그 기록 여부</td>
-              <td className={tableCellClass}>
-                <div className="flex items-center space-x-4">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={settings.auditLog.logActions.includes('login')}
-                      onChange={(e) => {
-                        const newActions = e.target.checked
-                          ? [...settings.auditLog.logActions, 'login']
-                          : settings.auditLog.logActions.filter(a => a !== 'login');
-                        handleSettingChange('auditLog', 'logActions', newActions);
-                      }}
-                      className={checkboxClass}
-                    />
-                    <span className="text-sm">로그인</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={settings.auditLog.logActions.includes('logout')}
-                      onChange={(e) => {
-                        const newActions = e.target.checked
-                          ? [...settings.auditLog.logActions, 'logout']
-                          : settings.auditLog.logActions.filter(a => a !== 'logout');
-                        handleSettingChange('auditLog', 'logActions', newActions);
-                      }}
-                      className={checkboxClass}
-                    />
-                    <span className="text-sm">로그아웃</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={settings.auditLog.logActions.includes('create')}
-                      onChange={(e) => {
-                        const newActions = e.target.checked
-                          ? [...settings.auditLog.logActions, 'create']
-                          : settings.auditLog.logActions.filter(a => a !== 'create');
-                        handleSettingChange('auditLog', 'logActions', newActions);
-                      }}
-                      className={checkboxClass}
-                    />
-                    <span className="text-sm">생성</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={settings.auditLog.logActions.includes('update')}
-                      onChange={(e) => {
-                        const newActions = e.target.checked
-                          ? [...settings.auditLog.logActions, 'update']
-                          : settings.auditLog.logActions.filter(a => a !== 'update');
-                        handleSettingChange('auditLog', 'logActions', newActions);
-                      }}
-                      className={checkboxClass}
-                    />
-                    <span className="text-sm">수정</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={settings.auditLog.logActions.includes('delete')}
-                      onChange={(e) => {
-                        const newActions = e.target.checked
-                          ? [...settings.auditLog.logActions, 'delete']
-                          : settings.auditLog.logActions.filter(a => a !== 'delete');
-                        handleSettingChange('auditLog', 'logActions', newActions);
-                      }}
-                      className={checkboxClass}
-                    />
-                    <span className="text-sm">삭제</span>
-                  </label>
-                </div>
+                <span className="ml-2">일</span>
               </td>
             </tr>
           </tbody>
@@ -841,56 +613,62 @@ export default function SettingsPage() {
 
   // 세션 관리 설정
   const renderSessionManagement = () => (
-    <div className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">세션 관리 설정</h2>
-      
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-xl font-semibold mb-4">세션 관리</h2>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className={tableHeaderClass}>설정 항목</th>
-              <th className={tableHeaderClass}>세션 타임아웃</th>
-              <th className={tableHeaderClass}>동시 접속 세션</th>
-              <th className={tableHeaderClass}>자동 로그인 기간</th>
+        <table className="min-w-full">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left py-2">설정 항목</th>
+              <th className="text-left py-2">값</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            <tr>
-              <td className={tableCellClass}>설정 값</td>
+          <tbody>
+            <tr className="border-b">
+              <td className={tableCellClass}>세션 타임아웃</td>
               <td className={tableCellClass}>
                 <div className="flex items-center">
                   <input
                     type="number"
                     value={settings.sessionManagement.sessionTimeout}
                     onChange={(e) => handleSettingChange('sessionManagement', 'sessionTimeout', parseInt(e.target.value))}
-                    className={inputClass}
+                    aria-label="세션 타임아웃"
                     min="1"
+                    max="1440"
                   />
-                  <span className="ml-2 text-sm text-gray-500">분</span>
+                  <span className="ml-2">분</span>
                 </div>
               </td>
+            </tr>
+            <tr className="border-b">
+              <td className={tableCellClass}>최대 동시 세션</td>
               <td className={tableCellClass}>
                 <div className="flex items-center">
                   <input
                     type="number"
                     value={settings.sessionManagement.maxConcurrentSessions}
                     onChange={(e) => handleSettingChange('sessionManagement', 'maxConcurrentSessions', parseInt(e.target.value))}
-                    className={inputClass}
+                    aria-label="최대 동시 세션"
                     min="1"
+                    max="10"
                   />
-                  <span className="ml-2 text-sm text-gray-500">개</span>
+                  <span className="ml-2">개</span>
                 </div>
               </td>
+            </tr>
+            <tr className="border-b">
+              <td className={tableCellClass}>자동 로그인 유지 기간</td>
               <td className={tableCellClass}>
                 <div className="flex items-center">
                   <input
                     type="number"
                     value={settings.sessionManagement.rememberMeDuration}
                     onChange={(e) => handleSettingChange('sessionManagement', 'rememberMeDuration', parseInt(e.target.value))}
-                    className={inputClass}
+                    aria-label="자동 로그인 유지 기간"
                     min="1"
+                    max="30"
                   />
-                  <span className="ml-2 text-sm text-gray-500">일</span>
+                  <span className="ml-2">일</span>
                 </div>
               </td>
             </tr>

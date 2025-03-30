@@ -1,24 +1,11 @@
 "use client";
 import React, { useState } from 'react';
-import { Search, Filter, MoreHorizontal } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 
 // 샘플 데이터
-const bettingHistory = [
+const bettingData = [
   {
     id: 1,
-    username: 'user123',
-    match: '맨유 vs 리버풀',
-    betType: '승패',
-    selection: '맨유 승',
-    amount: 100000,
-    odds: 2.5,
-    status: '완료',
-    date: '2024-03-22 14:30',
-    result: '승',
-    winAmount: 250000
-  },
-  {
-    id: 2,
     username: 'betking',
     match: '레이커스 vs 워리어스',
     betType: '승패',
@@ -31,7 +18,7 @@ const bettingHistory = [
     winAmount: 0
   },
   {
-    id: 3,
+    id: 2,
     username: 'winmaster',
     match: '다저스 vs 양키스',
     betType: '승패',
@@ -44,7 +31,7 @@ const bettingHistory = [
     winAmount: 640000
   },
   {
-    id: 4,
+    id: 3,
     username: 'sports999',
     match: 'PSG vs 바이에른',
     betType: '승패',
@@ -57,7 +44,7 @@ const bettingHistory = [
     winAmount: 0
   },
   {
-    id: 5,
+    id: 4,
     username: 'goal777',
     match: '아스널 vs 첼시',
     betType: '승패',
@@ -70,7 +57,7 @@ const bettingHistory = [
     winAmount: 720000
   },
   {
-    id: 6,
+    id: 5,
     username: 'livebet',
     match: '토트넘 vs 뉴캐슬',
     betType: '승패',
@@ -88,13 +75,12 @@ export default function BettingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('전체');
 
-  const filteredBets = bettingHistory.filter(bet => {
+  const filteredBets = bettingData.filter(bet => {
     const matchesSearch = bet.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          bet.match.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === '전체' || bet.status === statusFilter;
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
-    // 날짜 문자열을 Date 객체로 변환하여 비교
     const dateA = new Date(a.date);
     const dateB = new Date(b.date);
     return dateB.getTime() - dateA.getTime();
@@ -104,7 +90,7 @@ export default function BettingPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">베팅 내역</h1>
-        <p className="text-gray-600">전체 베팅 수: {bettingHistory.length}건</p>
+        <p className="text-gray-600">전체 베팅 수: {bettingData.length}건</p>
       </div>
 
       {/* 검색 및 필터 */}
@@ -127,6 +113,7 @@ export default function BettingPage() {
               className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="상태 필터"
             >
               <option value="전체">전체</option>
               <option value="완료">완료</option>

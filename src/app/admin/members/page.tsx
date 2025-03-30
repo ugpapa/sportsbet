@@ -1,6 +1,31 @@
 "use client";
 import React, { useState } from 'react';
-import { Search, Filter, MoreHorizontal, X, History, Edit, Trash2, AlertCircle, KeyRound } from 'lucide-react';
+import { Search, Edit, Trash2 } from 'lucide-react';
+
+interface BettingHistory {
+  id: number;
+  date: string;
+  sport: string;
+  match: string;
+  amount: number;
+  odds: number;
+  result: string;
+  winLoss: number;
+  status: string;
+}
+
+interface Member {
+  id: string;
+  username: string;
+  email: string;
+  phone: string;
+  totalDeposit: number;
+  balance: number;
+  joinDate: string;
+  lastLogin: string;
+  status: string;
+  bettingHistory: BettingHistory[];
+}
 
 // 샘플 회원 데이터
 const members = [
@@ -307,7 +332,7 @@ const members = [
 
 export default function MembersPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMember, setSelectedMember] = useState(null);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [historySearchTerm, setHistorySearchTerm] = useState('');
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
@@ -330,7 +355,7 @@ export default function MembersPage() {
       member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.phone.includes(searchTerm)
     )
-    .sort((a, b) => new Date(b.joinDate) - new Date(a.joinDate));
+    .sort((a, b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime());
 
   // 히스토리 필터링
   const filteredHistory = selectedMember?.bettingHistory.filter(history =>
@@ -339,14 +364,14 @@ export default function MembersPage() {
   ) || [];
 
   // 히스토리 모달 열기
-  const openHistoryModal = (member) => {
+  const openHistoryModal = (member: Member) => {
     setSelectedMember(member);
     setShowHistoryModal(true);
     setHistorySearchTerm('');
   };
 
   // 비활성화 모달 열기
-  const openDeactivateModal = (member) => {
+  const openDeactivateModal = (member: Member) => {
     setSelectedMember(member);
     setShowDeactivateModal(true);
     setDeactivateForm({
@@ -357,7 +382,7 @@ export default function MembersPage() {
   };
 
   // 수정 모달 열기
-  const openEditModal = (member) => {
+  const openEditModal = (member: Member) => {
     setSelectedMember(member);
     setEditForm({
       username: member.username,
@@ -518,7 +543,7 @@ export default function MembersPage() {
                       className="text-blue-600 hover:text-blue-800"
                       title="배팅 히스토리"
                     >
-                      <History className="h-5 w-5" />
+                      <Search className="h-5 w-5" />
                     </button>
                     <button 
                       onClick={() => openEditModal(member)}
@@ -543,20 +568,20 @@ export default function MembersPage() {
       </div>
 
       {/* 히스토리 모달 */}
-      {showHistoryModal && (
+      {showHistoryModal && selectedMember && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[80vh] overflow-hidden">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">
-                  {selectedMember.username} 배팅 히스토리
+                  {selectedMember?.username} 배팅 히스토리
                 </h2>
                 <button
                   onClick={() => setShowHistoryModal(false)}
                   className="text-gray-500 hover:text-gray-700"
                   title="모달 닫기"
                 >
-                  <X className="h-6 w-6" />
+                  <Search className="h-6 w-6" />
                 </button>
               </div>
 
@@ -632,13 +657,13 @@ export default function MembersPage() {
       )}
 
       {/* 비활성화 모달 */}
-      {showDeactivateModal && (
+      {showDeactivateModal && selectedMember && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg w-full max-w-md">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold flex items-center">
-                  <AlertCircle className="h-6 w-6 text-red-500 mr-2" />
+                  <Search className="h-6 w-6 text-red-500 mr-2" />
                   회원 비활성화
                 </h2>
                 <button
@@ -646,16 +671,16 @@ export default function MembersPage() {
                   className="text-gray-500 hover:text-gray-700"
                   title="모달 닫기"
                 >
-                  <X className="h-6 w-6" />
+                  <Search className="h-6 w-6" />
                 </button>
               </div>
 
               <div className="mb-4">
                 <p className="text-gray-600 mb-2">회원 정보</p>
                 <div className="bg-gray-50 p-3 rounded">
-                  <p><span className="font-medium">ID:</span> {selectedMember.id}</p>
-                  <p><span className="font-medium">닉네임:</span> {selectedMember.username}</p>
-                  <p><span className="font-medium">이메일:</span> {selectedMember.email}</p>
+                  <p><span className="font-medium">ID:</span> {selectedMember?.id}</p>
+                  <p><span className="font-medium">닉네임:</span> {selectedMember?.username}</p>
+                  <p><span className="font-medium">이메일:</span> {selectedMember?.email}</p>
                 </div>
               </div>
 
@@ -720,7 +745,7 @@ export default function MembersPage() {
       )}
 
       {/* 수정 모달 */}
-      {showEditModal && (
+      {showEditModal && selectedMember && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg w-full max-w-md">
             <div className="p-6">
@@ -734,16 +759,16 @@ export default function MembersPage() {
                   className="text-gray-500 hover:text-gray-700"
                   title="모달 닫기"
                 >
-                  <X className="h-6 w-6" />
+                  <Search className="h-6 w-6" />
                 </button>
               </div>
 
               <div className="mb-4">
                 <p className="text-gray-600 mb-2">회원 정보</p>
                 <div className="bg-gray-50 p-3 rounded">
-                  <p><span className="font-medium">ID:</span> {selectedMember.id}</p>
-                  <p><span className="font-medium">가입일:</span> {selectedMember.joinDate}</p>
-                  <p><span className="font-medium">최근 로그인:</span> {selectedMember.lastLogin}</p>
+                  <p><span className="font-medium">ID:</span> {selectedMember?.id}</p>
+                  <p><span className="font-medium">가입일:</span> {selectedMember?.joinDate}</p>
+                  <p><span className="font-medium">최근 로그인:</span> {selectedMember?.lastLogin}</p>
                 </div>
               </div>
 
@@ -792,7 +817,7 @@ export default function MembersPage() {
                     onClick={handlePasswordReset}
                     className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
                   >
-                    <KeyRound className="h-5 w-5" />
+                    <Search className="h-5 w-5" />
                     <span>비밀번호 초기화 및 텔레그램 발송</span>
                   </button>
                 </div>
