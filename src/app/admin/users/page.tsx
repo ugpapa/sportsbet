@@ -4,59 +4,47 @@ import React, { useState } from 'react';
 import { 
   Search, 
   Filter,
-  MoreVertical,
   ChevronLeft,
   ChevronRight,
-  Users,
+  Users as UsersIcon,
   UserPlus,
   UserMinus,
-  Ban,
-  CheckCircle,
-  XCircle
+  Ban
 } from 'lucide-react';
 
-interface User {
-  id: number;
+type UserStatus = 'active' | 'inactive' | 'banned';
+
+interface UserData {
+  id: string;
   username: string;
-  email: string;
-  phone: string;
-  status: 'active' | 'inactive' | 'banned';
-  balance: number;
-  totalDeposit: number;
-  totalWithdraw: number;
-  totalBetting: number;
-  winRate: number;
-  createdAt: string;
+  status: UserStatus;
+  joinDate: string;
   lastLogin: string;
+  actions: string[];
 }
 
 export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'banned'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | UserStatus>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
 
+  const statuses: UserStatus[] = ['active', 'inactive', 'banned'];
+
   // 임시 데이터
-  const users: User[] = Array.from({ length: 50 }, (_, i) => ({
-    id: i + 1,
+  const users: UserData[] = Array.from({ length: 50 }, (_, i) => ({
+    id: `user${i + 1}`,
     username: `user${i + 1}`,
-    email: `user${i + 1}@example.com`,
-    phone: `010-${String(Math.floor(1000 + Math.random() * 9000)).padStart(4, '0')}-${String(Math.floor(1000 + Math.random() * 9000)).padStart(4, '0')}`,
-    status: ['active', 'inactive', 'banned'][Math.floor(Math.random() * 3)] as 'active' | 'inactive' | 'banned',
-    balance: Math.floor(Math.random() * 10000000),
-    totalDeposit: Math.floor(Math.random() * 50000000),
-    totalWithdraw: Math.floor(Math.random() * 40000000),
-    totalBetting: Math.floor(Math.random() * 100000000),
-    winRate: Math.random() * 100,
-    createdAt: new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000).toISOString(),
-    lastLogin: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString()
+    status: statuses[Math.floor(Math.random() * 3)],
+    joinDate: new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000).toISOString(),
+    lastLogin: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
+    actions: ['View', 'Edit', 'Delete']
   }));
 
   // 검색 및 필터링된 사용자
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.phone.includes(searchTerm);
+                         user.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -84,6 +72,12 @@ export default function UsersPage() {
     }).format(date);
   };
 
+  // 사용자 액션 처리
+  const onActionClick = (action: string, userId: string): void => {
+    console.log(`Performing ${action} on user ${userId}`);
+    // 실제 액션 처리 로직 구현
+  };
+
   return (
     <div className="flex-1 bg-gray-50">
       <div className="w-full p-3 sm:p-4">
@@ -96,7 +90,7 @@ export default function UsersPage() {
                 <p className="text-lg xl:text-xl font-bold mt-1 truncate">{formatNumber(users.length)}</p>
               </div>
               <div className="bg-blue-100 p-2 rounded-full shrink-0 ml-2">
-                <Users className="h-5 w-5 text-blue-600" />
+                <UsersIcon className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           </div>
@@ -162,7 +156,7 @@ export default function UsersPage() {
                 <Filter className="h-5 w-5 text-gray-400" />
                 <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  onChange={(e) => setStatusFilter(e.target.value as UserStatus)}
                   className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   title="회원 상태 필터"
                 >
@@ -184,13 +178,8 @@ export default function UsersPage() {
                 <tr>
                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">회원 정보</th>
                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-                  <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">보유금</th>
-                  <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">총 입금</th>
-                  <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">총 출금</th>
-                  <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">총 베팅</th>
-                  <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">승률</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">가입일</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">최근 접속</th>
+                  <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">가입일</th>
+                  <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">최근 접속</th>
                   <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">관리</th>
                 </tr>
               </thead>
@@ -200,8 +189,6 @@ export default function UsersPage() {
                     <td className="px-3 py-4 whitespace-nowrap">
                       <div className="flex flex-col">
                         <div className="text-sm font-medium text-gray-900">{user.username}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                        <div className="text-sm text-gray-500">{user.phone}</div>
                       </div>
                     </td>
                     <td className="px-3 py-4 whitespace-nowrap">
@@ -213,34 +200,24 @@ export default function UsersPage() {
                          user.status === 'inactive' ? '휴면' : '정지'}
                       </span>
                     </td>
-                    <td className="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                      ₩{formatNumber(user.balance)}
-                    </td>
-                    <td className="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                      ₩{formatNumber(user.totalDeposit)}
-                    </td>
-                    <td className="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                      ₩{formatNumber(user.totalWithdraw)}
-                    </td>
-                    <td className="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                      ₩{formatNumber(user.totalBetting)}
-                    </td>
-                    <td className="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                      {user.winRate.toFixed(1)}%
-                    </td>
                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(user.createdAt)}
+                      {formatDate(user.joinDate)}
                     </td>
                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(user.lastLogin)}
                     </td>
                     <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button 
-                        className="text-gray-400 hover:text-gray-500"
-                        title="회원 관리 메뉴"
-                      >
-                        <MoreVertical className="h-5 w-5" />
-                      </button>
+                      <div className="flex justify-end space-x-2">
+                        {user.actions.map((action) => (
+                          <button 
+                            key={action}
+                            onClick={() => onActionClick(action, user.id)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            {action}
+                          </button>
+                        ))}
+                      </div>
                     </td>
                   </tr>
                 ))}

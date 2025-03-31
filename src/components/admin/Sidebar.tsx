@@ -1,4 +1,3 @@
-/* eslint-disable */
 "use client";
 import React from 'react';
 import { 
@@ -37,7 +36,7 @@ const menuItems = [
   { path: '/admin/settings', icon: Settings, label: '시스템설정' },
 ];
 
-const Sidebar = () => {
+export const Sidebar = () => {
   const pathname = usePathname();
 
   return (
@@ -77,6 +76,4 @@ const Sidebar = () => {
       </div>
     </div>
   );
-};
-
-export default Sidebar; 
+}; 

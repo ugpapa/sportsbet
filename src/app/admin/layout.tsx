@@ -1,8 +1,7 @@
-/* eslint-disable */
 'use client';
 
 import React from 'react';
-import Sidebar from '@/components/admin/Sidebar';
+import { Sidebar } from '@/components/admin/Sidebar';
 
 export default function AdminLayout({
   children,

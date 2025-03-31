@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { 
   X, 
   Plus, 
-  CreditCard, 
   ToggleLeft, 
   ToggleRight,
   Trash
