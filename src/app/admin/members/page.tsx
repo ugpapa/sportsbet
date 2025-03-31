@@ -337,6 +337,8 @@ export default function MembersPage() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const [deactivateForm, setDeactivateForm] = useState({
     adminName: '',
     adminPhone: '',
@@ -356,6 +358,17 @@ export default function MembersPage() {
       member.phone.includes(searchTerm)
     )
     .sort((a, b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime());
+
+  // 페이지네이션 계산
+  const indexOfLastMember = currentPage * itemsPerPage;
+  const indexOfFirstMember = indexOfLastMember - itemsPerPage;
+  const currentMembers = filteredMembers.slice(indexOfFirstMember, indexOfLastMember);
+  const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
 
   // 히스토리 필터링
   const filteredHistory = selectedMember?.bettingHistory.filter(history =>
@@ -441,9 +454,9 @@ export default function MembersPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-2 space-y-3 max-w-[calc(100vw-256px)]">
       {/* 회원 통계 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="flex items-center justify-between">
             <div>
@@ -492,7 +505,7 @@ export default function MembersPage() {
       </div>
 
       {/* 검색 및 필터 */}
-      <div className="flex items-center space-x-4 bg-white p-4 rounded-lg shadow">
+      <div className="flex items-center space-x-3 bg-white p-3 rounded-lg shadow">
         <div className="flex-1 relative">
           <input
             type="text"
@@ -523,10 +536,10 @@ export default function MembersPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredMembers.map((member, index) => (
+            {currentMembers.map((member, index) => (
               <tr key={member.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-center text-gray-500">
-                  {filteredMembers.length - index}
+                  {filteredMembers.length - (indexOfFirstMember + index)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">{member.id}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{member.username}</td>
@@ -565,6 +578,47 @@ export default function MembersPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* 페이지네이션 */}
+      <div className="mt-3 flex justify-center">
+        <nav className="flex items-center space-x-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`px-3 py-2 rounded-lg ${
+              currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'hover:bg-gray-100'
+            }`}
+          >
+            이전
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => handlePageChange(page)}
+              className={`px-3 py-2 rounded-lg ${
+                currentPage === page
+                  ? 'bg-blue-600 text-white'
+                  : 'hover:bg-gray-100'
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-2 rounded-lg ${
+              currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'hover:bg-gray-100'
+            }`}
+          >
+            다음
+          </button>
+        </nav>
       </div>
 
       {/* 히스토리 모달 */}
