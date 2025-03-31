@@ -301,20 +301,21 @@ export default function DashboardPage() {
   const sportsChartInstance = useRef<Chart | null>(null);
   const sportsProfitChartInstance = useRef<Chart | null>(null);
 
+  // WebSocket 연결 설정
+  const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'wss://your-websocket-server';
+  const ws = typeof window !== 'undefined' ? new WebSocket(wsUrl) : null;
+
   useEffect(() => {
-    // WebSocket 연결 설정
-    const ws = new WebSocket('ws://your-websocket-server');
-    
-    ws.onmessage = (event) => {
+    ws?.onmessage = (event) => {
       const data = JSON.parse(event.data);
       // 실시간 알림 처리
       setNotifications(prev => [data, ...prev].slice(0, 10));
     };
 
     return () => {
-      ws.close();
+      ws?.close();
     };
-  }, []);
+  }, [ws]);
 
   useEffect(() => {
     const interval = setInterval(() => {
