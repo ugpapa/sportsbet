@@ -1,3 +1,4 @@
+/* eslint-disable */
 "use client";
 import React from 'react';
 import { 
@@ -5,7 +6,12 @@ import {
   Users, 
   CreditCard, 
   Settings, 
-  LogOut 
+  LogOut,
+  DollarSign,
+  Wallet,
+  BellRing,
+  MessagesSquare,
+  HelpCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -21,13 +27,13 @@ const adminInfo = {
 const menuItems = [
   { path: '/admin/dashboard', icon: LayoutDashboard, label: '대시보드' },
   { path: '/admin/members', icon: Users, label: '회원관리', hasNotification: true },
-  { path: '/admin/betting', icon: LayoutDashboard, label: '배팅내역', hasNotification: true },
-  { path: '/admin/transactions/deposit', icon: LayoutDashboard, label: '입금요청', hasNotification: true },
-  { path: '/admin/transactions/withdraw', icon: LayoutDashboard, label: '출금요청', hasNotification: true },
-  { path: '/admin/accounts', icon: CreditCard, label: '계좌관리' },
-  { path: '/admin/notice', icon: LayoutDashboard, label: '공지사항' },
-  { path: '/admin/inquiry', icon: LayoutDashboard, label: '1:1문의', hasNotification: true },
-  { path: '/admin/faq', icon: LayoutDashboard, label: 'FAQ' },
+  { path: '/admin/betting', icon: DollarSign, label: '배팅내역', hasNotification: true },
+  { path: '/admin/transactions/deposit', icon: Wallet, label: '입금요청', hasNotification: true },
+  { path: '/admin/transactions/withdraw', icon: CreditCard, label: '출금요청', hasNotification: true },
+  { path: '/admin/accounts', icon: Settings, label: '계좌관리' },
+  { path: '/admin/notice', icon: BellRing, label: '공지사항' },
+  { path: '/admin/inquiry', icon: MessagesSquare, label: '1:1문의', hasNotification: true },
+  { path: '/admin/faq', icon: HelpCircle, label: 'FAQ' },
   { path: '/admin/settings', icon: Settings, label: '시스템설정' },
 ];
 

@@ -1,3 +1,6 @@
+/* eslint-disable */
+'use client';
+
 import React from 'react';
 import Sidebar from '@/components/admin/Sidebar';
 

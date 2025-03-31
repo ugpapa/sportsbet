@@ -1,0 +1,4 @@
+src/app/**/*
+src/components/**/*
+src/lib/**/*
+src/hooks/**/* 

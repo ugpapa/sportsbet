@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { Search, Edit, Trash2 } from 'lucide-react';
+import { Search, Edit, Trash2, X } from 'lucide-react';
 
 interface BettingHistory {
   id: number;
@@ -581,7 +581,7 @@ export default function MembersPage() {
                   className="text-gray-500 hover:text-gray-700"
                   title="모달 닫기"
                 >
-                  <Search className="h-6 w-6" />
+                  <X className="h-6 w-6" />
                 </button>
               </div>
 
@@ -671,7 +671,7 @@ export default function MembersPage() {
                   className="text-gray-500 hover:text-gray-700"
                   title="모달 닫기"
                 >
-                  <Search className="h-6 w-6" />
+                  <X className="h-6 w-6" />
                 </button>
               </div>
 
@@ -759,7 +759,7 @@ export default function MembersPage() {
                   className="text-gray-500 hover:text-gray-700"
                   title="모달 닫기"
                 >
-                  <Search className="h-6 w-6" />
+                  <X className="h-6 w-6" />
                 </button>
               </div>
 

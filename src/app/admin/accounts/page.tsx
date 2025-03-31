@@ -1,6 +1,13 @@
 "use client";
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { 
+  X, 
+  Plus, 
+  CreditCard, 
+  ToggleLeft, 
+  ToggleRight,
+  Trash
+} from 'lucide-react';
 
 // 샘플 계좌 데이터
 const initialAccounts = [
@@ -108,7 +115,7 @@ export default function AccountsPage() {
             onClick={() => setIsModalOpen(true)}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center"
           >
-            <X size={20} className="mr-2" />
+            <Plus size={20} className="mr-2" />
             계좌 등록
           </button>
         </div>
@@ -170,7 +177,7 @@ export default function AccountsPage() {
                         }`}
                         title={account.isActive ? '비활성화' : '활성화'}
                       >
-                        <X size={16} />
+                        {account.isActive ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
                       </button>
                       {!account.isMain && (
                         <button
@@ -178,7 +185,7 @@ export default function AccountsPage() {
                           className="p-1 text-red-600 hover:bg-red-100 rounded"
                           title="삭제"
                         >
-                          <X size={16} />
+                          <Trash size={16} />
                         </button>
                       )}
                     </div>
