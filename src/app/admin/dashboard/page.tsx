@@ -302,20 +302,26 @@ export default function DashboardPage() {
   const sportsProfitChartInstance = useRef<Chart | null>(null);
 
   // WebSocket 연결 설정
-  const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'wss://your-websocket-server';
-  const ws = typeof window !== 'undefined' ? new WebSocket(wsUrl) : null;
-
+  const wsRef = useRef<WebSocket | null>(null);
+  
   useEffect(() => {
-    ws?.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      // 실시간 알림 처리
-      setNotifications(prev => [data, ...prev].slice(0, 10));
-    };
+    if (typeof window !== 'undefined') {
+      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'wss://your-websocket-server';
+      wsRef.current = new WebSocket(wsUrl);
+      
+      wsRef.current.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        // 실시간 알림 처리
+        setNotifications(prev => [data, ...prev].slice(0, 10));
+      };
 
-    return () => {
-      ws?.close();
-    };
-  }, [ws]);
+      return () => {
+        if (wsRef.current) {
+          wsRef.current.close();
+        }
+      };
+    }
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
